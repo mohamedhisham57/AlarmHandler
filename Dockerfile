@@ -1,17 +1,31 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install system dependencies
+# Install system dependencies and pip
 RUN apk add --no-cache \
     python3 \
-    py3-pip
+    python3-dev \
+    py3-pip \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev
+
+# Set Python environment variables
+ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
 
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir \
+    --upgrade \
+    --require-hashes \
+    -r requirements.txt
 
 # Copy application files
 COPY main.py .
