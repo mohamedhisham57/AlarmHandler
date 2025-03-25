@@ -21,7 +21,7 @@
         "sms_credentials": "apiuser:pleasechangeme",
         "alarm_delay_minutes": 2,
         "cold_room_sensors": "62210229,62240894,87654321",
-        "normal_room_sensors": "44443333,66665555,88887777"",
+        "normal_room_sensors": "44443333,66665555,88887777",
         "phone_numbers": "01140214856,01116072004,01123008561"
     },
     "schema": {
