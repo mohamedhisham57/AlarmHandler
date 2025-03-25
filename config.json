@@ -14,15 +14,15 @@
     "startup": "application",
     "boot": "auto",
     "options": {
-        "mqtt_broker": "192.168.1.100",
+        "mqtt_broker": "192.168.1.101",
         "mqtt_user": "mqtt_user",
-        "mqtt_pass": "your_mqtt_password",
+        "mqtt_pass": "Skarpt",
         "sms_uri": "http://192.168.1.101:3000/api/v1/sms/outbox",
-        "sms_credentials": "apiuser:apipassword",
-        "alarm_delay_minutes": 1,
-        "cold_room_sensors": ["62210229", "62240894"],
-        "normal_room_sensors": ["44443333", "66665555"],
-        "phone_numbers": ["01140214856", "01116072004"]
+        "sms_credentials": "apiuser:pleasechangeme",
+        "alarm_delay_minutes": 2,
+        "cold_room_sensors": "62210229,62240894,87654321",
+        "normal_room_sensors": "44443333,66665555,88887777"",
+        "phone_numbers": "01140214856,01116072004,01123008561"
     },
     "schema": {
         "mqtt_broker": "str",
@@ -31,8 +31,8 @@
         "sms_uri": "str",
         "sms_credentials": "str",
         "alarm_delay_minutes": "int",
-        "cold_room_sensors": ["str"],
-        "normal_room_sensors": ["str"],
-        "phone_numbers": ["str"]
+        "cold_room_sensors": "str",
+        "normal_room_sensors": "str",
+        "phone_numbers": "str"
     }
 }
