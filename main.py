@@ -6,7 +6,7 @@ import base64
 import requests
 import logging
 import paho.mqtt.client as mqtt
-from sms import SMS
+# from sms import SMS
 import json
 
 # Load config from Home Assistant's options.json file
