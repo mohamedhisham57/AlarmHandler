@@ -1,5 +1,5 @@
 {
-  "name": "Alarm Handler",
+  "name": "AlarmHandler",
   "version": "1.0",
   "slug": "alarm_handler",
   "description": "Handles alarms and sends SMS via MQTT and HTTP",
