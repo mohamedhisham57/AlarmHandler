@@ -1,39 +1,34 @@
 {
-    "name": "Alarm Handler",
-    "version": "1.0.1",
-    "slug": "alarm_handler",
-    "description": "Advanced Alarm Handling System with MQTT and SMS",
-    "url": "https://github.com/yourusername/alarm_handler_addon",
-    "arch": [
-        "armhf",
-        "armv7",
-        "aarch64",
-        "amd64",
-        "i386"
-    ],
-    "startup": "application",
-    "boot": "auto",
-    "host_network": true,
-    "options": {
-        "mqtt_broker": "192.168.1.101",
-        "mqtt_user": "mqtt_user",
-        "mqtt_pass": "Skarpt",
-        "sms_uri": "http://192.168.1.101:3000/api/v1/sms/outbox",
-        "sms_credentials": "apiuser:pleasechangeme",
-        "alarm_delay_minutes": 2,
-        "cold_room_sensors": "62210229,62240894,87654321",
-        "normal_room_sensors": "44443333,66665555,88887777",
-        "phone_numbers": "01140214856,01116072004,01123008561"
-    },
-    "schema": {
-        "mqtt_broker": "str",
-        "mqtt_user": "str",
-        "mqtt_pass": "password",
-        "sms_uri": "str",
-        "sms_credentials": "str",
-        "alarm_delay_minutes": "int",
-        "cold_room_sensors": "str",
-        "normal_room_sensors": "str",
-        "phone_numbers": "str"
-    }
+  "name": "Alarm Handler",
+  "version": "1.0",
+  "slug": "alarm_handler",
+  "description": "Handles alarms and sends SMS via MQTT and HTTP",
+  "startup": "application",
+  "boot": "auto",
+  "host_network": true,
+  "options": {
+    "mqtt_broker": "192.168.1.101",
+    "mqtt_user": "mqtt-user",
+    "mqtt_pass": "Skarpt",
+    "sms_uri": "http://192.168.1.101:3000/api/v1/sms/outbox",
+    "sms_credentials": "apiuser:pleasechangeme",
+    "alarm_delay_minutes": 1,
+    "cold_room_sensors": "62210229,62240894,06240840",
+    "normal_room_sensors": "44443333,66665555,88887777",
+    "phone_numbers": "01140214856,01116072004,01123008561"
+  },
+  "schema": {
+    "mqtt_broker": "str",
+    "mqtt_user": "str",
+    "mqtt_pass": "password",
+    "sms_uri": "str",
+    "sms_credentials": "str",
+    "alarm_delay_minutes": "int",
+    "cold_room_sensors": "str",
+    "normal_room_sensors": "str",
+    "phone_numbers": "str"
+  },
+  "ports": {
+    "5060/tcp": 5060
+  }
 }
