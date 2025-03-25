@@ -13,7 +13,6 @@ import json
 with open('/data/options.json', 'r') as config_file:
     config = json.load(config_file)
 
-# Extract options
 broker_address = config['mqtt_broker']
 mqtt_username = config['mqtt_user']
 mqtt_password = config['mqtt_pass']
@@ -21,12 +20,13 @@ sms_uri = config['sms_uri']
 sms_credentials = config['sms_credentials']
 alarm_send_delay_minutes = config['alarm_delay_minutes']
 alarm_send_delay = alarm_send_delay_minutes * 60
-cold_room_sensors = config['cold_room_sensors']
-normal_room_sensors = config['normal_room_sensors']
-phone_numbers = config['phone_numbers']
+
+# Parse string fields into lists
+cold_room_sensors = [s.strip() for s in config['cold_room_sensors'].split(',') if s.strip()]
+normal_room_sensors = [s.strip() for s in config['normal_room_sensors'].split(',') if s.strip()]
+phone_numbers = [s.strip() for s in config['phone_numbers'].split(',') if s.strip()]
 
 last_alarm_sent_time = 0
-
 
 # Logging
 logging.basicConfig(level=logging.INFO)
