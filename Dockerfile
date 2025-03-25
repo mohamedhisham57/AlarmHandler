@@ -23,10 +23,9 @@ COPY config.json /config.json
 RUN chmod a+x /run.sh
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir \
+RUN pip3 install
     paho-mqtt \
     influxdb \
-    PyCRC-Hex \
     requests
 
 # Set the entrypoint
