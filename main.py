@@ -147,11 +147,11 @@ def assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time):
         }
 
         alarm_message = (
-            f' Alarm Alert! \\n'
-            f'Alarm Case: {TypeOfAlarm} \\n'
-            f'Sensor Id: {sensorid} \\n'
-            f'Value: {value} \\n'
-            f'Time: {alarm_time} \\n'
+            f' Alarm Alert! \n'
+            f'Alarm Case: {TypeOfAlarm} \n'
+            f'Sensor Id: {sensorid} \n'
+            f'Value: {value} \n'
+            f'Time: {alarm_time} \n'
         )
         
         logger.info(f"Preparing to send alarm message: {alarm_message}")
@@ -169,7 +169,7 @@ def assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time):
         elif sensorid in list_of_normal_room_sensors:
             threading.Timer(5 * 60, drop_row, args=(sensorid,)).start()
 
-# Rest of the code remains the same...
+
 def convertdata(s):
     try:
         s = s.replace("\n", "").replace("b'", "").replace("\n\n'", "")
