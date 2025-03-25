@@ -1,4 +1,3 @@
-
 import asyncore
 import threading
 import time
@@ -7,17 +6,26 @@ import requests
 import logging
 import paho.mqtt.client as mqtt
 # from sms import SMS
+import json
 
-# Configuration
-broker_address = "192.168.1.101"
-mqtt_username = "mqtt-user"
-mqtt_password = "Skarpt"
-sms_uri = "http://192.168.1.101:3000/api/v1/sms/outbox"
-sms_credentials = "apiuser:pleasechangeme"
-alarm_send_delay_minutes = 1  # Change this to any number of minutes you want
+# Load config from Home Assistant's options.json file
+with open('/data/options.json', 'r') as config_file:
+    config = json.load(config_file)
+
+broker_address = config['mqtt_broker']
+mqtt_username = config['mqtt_user']
+mqtt_password = config['mqtt_pass']
+sms_uri = config['sms_uri']
+sms_credentials = config['sms_credentials']
+alarm_send_delay_minutes = config['alarm_delay_minutes']
 alarm_send_delay = alarm_send_delay_minutes * 60
-last_alarm_sent_time = 0
 
+# Parse string fields into lists
+cold_room_sensors = [s.strip() for s in config['cold_room_sensors'].split(',') if s.strip()]
+normal_room_sensors = [s.strip() for s in config['normal_room_sensors'].split(',') if s.strip()]
+phone_numbers = [s.strip() for s in config['phone_numbers'].split(',') if s.strip()]
+
+last_alarm_sent_time = 0
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -45,8 +53,8 @@ def append_normal_list():
     ]
     return new_list
 
-list_of_cold_room_sensors = append_cold_list()
-list_of_normal_room_sensors = append_normal_list()
+list_of_cold_room_sensors = cold_room_sensors
+list_of_normal_room_sensors = normal_room_sensors
 
 # In-memory alarm tracking
 alarms = {}
@@ -128,7 +136,7 @@ def assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time):
             f'Time: {alarm_time} \\n'
         )
         numbers = ["01140214856", "01116072004", "01123008561"]
-        for num in numbers:
+        for num in phone_numbers:
             send_sms(alarm_message, num)
         if sensorid in list_of_cold_room_sensors:
             threading.Timer(5 * 60, drop_row, args=(sensorid,)).start()
