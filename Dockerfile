@@ -1,35 +1,26 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install system dependencies and pip
+# Install only essential dependencies
 RUN apk add --no-cache \
     python3 \
-    python3-dev \
-    py3-pip \
-    gcc \
-    musl-dev \
-    libffi-dev \
-    openssl-dev
+    py3-pip
 
-# Set Python environment variables
-ENV PYTHONUNBUFFERED=1
+# Ensure pip is up to date with minimal intervention
+RUN python3 -m pip install --upgrade pip --user
 
 # Set working directory
 WORKDIR /app
 
-# Upgrade pip
-RUN pip3 install --upgrade pip
-
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir \
-    --upgrade \
-    --require-hashes \
-    -r requirements.txt
-
 # Copy application files
+COPY requirements.txt .
 COPY main.py .
 COPY run.sh /
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Make run script executable
 RUN chmod a+x /run.sh
 
 # Set the entrypoint
