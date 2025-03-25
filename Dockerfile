@@ -1,24 +1,33 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
+
+# Set environment variables
 ENV LANG C.UTF-8
-# Copy data for add-on
+
+# Install system dependencies and Python
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    python3-dev \
+    build-base
+
+# Set working directory
+WORKDIR /app
+
+# Copy application files
+COPY main.py .
 COPY run.sh /
+COPY config.json /config.json
+
+# Make run script executable
 RUN chmod a+x /run.sh
 
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+    paho-mqtt \
+    influxdb \
+    PyCRC-Hex \
+    requests
+
+# Set the entrypoint
 CMD [ "/run.sh" ]
-
-FROM python:3.9
-
-
-
-COPY config /config
-
-ADD main.py .
-
-
-RUN pip install paho-mqtt 
-RUN pip install influxdb
-RUN pip install PyCRC-Hex
-
-
-CMD ["python3" , "./main.py"]
