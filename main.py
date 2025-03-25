@@ -10,21 +10,22 @@ import traceback
 
 # Configure more detailed logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Change to DEBUG for most verbose logging
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG,  # Comprehensive logging for debugging
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='/data/addon_debug.log'  # Log to a file for persistent debugging
 )
 logger = logging.getLogger(__name__)
 
-# Load config from Home Assistant's options.json file
+# Enhanced config loading with extensive error handling
 try:
     with open('/data/options.json', 'r') as config_file:
         config = json.load(config_file)
 except Exception as e:
-    logger.error(f"Failed to load config file: {e}")
-    logger.error(traceback.format_exc())
-    config = {}  # Provide a default empty config to prevent further errors
+    logger.critical(f"CRITICAL: Failed to load configuration file: {e}")
+    logger.critical(traceback.format_exc())
+    config = {}
 
-# Extract configuration with error handling and logging
+# Extract configuration with extensive logging
 broker_address = config.get('mqtt_broker', '')
 mqtt_username = config.get('mqtt_user', '')
 mqtt_password = config.get('mqtt_pass', '')
@@ -39,11 +40,12 @@ try:
     normal_room_sensors = [s.strip() for s in config.get('normal_room_sensors', '').split(',') if s.strip()]
     phone_numbers = [s.strip() for s in config.get('phone_numbers', '').split(',') if s.strip()]
     
-    logger.info(f"Configured Cold Room Sensors: {cold_room_sensors}")
-    logger.info(f"Configured Normal Room Sensors: {normal_room_sensors}")
-    logger.info(f"Configured Phone Numbers: {phone_numbers}")
+    logger.info(f"Loaded Configuration:")
+    logger.info(f"Cold Room Sensors: {cold_room_sensors}")
+    logger.info(f"Normal Room Sensors: {normal_room_sensors}")
+    logger.info(f"Phone Numbers: {phone_numbers}")
 except Exception as e:
-    logger.error(f"Error parsing sensor and phone number configuration: {e}")
+    logger.error(f"Configuration Parsing Error: {e}")
     logger.error(traceback.format_exc())
     cold_room_sensors = []
     normal_room_sensors = []
@@ -51,64 +53,71 @@ except Exception as e:
 
 last_alarm_sent_time = 0
 
-# In-memory alarm tracking
+# In-memory alarm tracking with logging
 alarms = {}
+
+
+
+list_of_cold_room_sensors = cold_room_sensors
+list_of_normal_room_sensors = normal_room_sensors
 
 def send_mqtt(topic):
     try:
+        logger.debug(f"Attempting to send MQTT message to topic: {topic}")
         client = mqtt.Client("P1")
         client.username_pw_set(username=mqtt_username, password=mqtt_password)
         client.connect(broker_address)
         client.publish(str(topic), "1")
-        logger.info(f"MQTT Published to topic '{topic}'")
+        logger.info(f"MQTT message successfully published to topic '{topic}'")
     except Exception as e:
-        logger.error(f"MQTT error: {e}")
+        logger.error(f"MQTT Publish Error: {e}")
         logger.error(traceback.format_exc())
 
 def send_http_request(credentials, url, method, request_body, timeout):
-    logger.debug(f"Sending HTTP request to {url}")
-    logger.debug(f"Request method: {method}")
-    logger.debug(f"Request body: {request_body}")
-
-    base64_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Basic {base64_credentials}'
-    }
-
+    logger.debug(f"Preparing HTTP request to {url}")
+    
     try:
+        base64_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {base64_credentials}'
+        }
+
         if method.upper() == 'POST':
-            logger.debug("Attempting to send POST request")
+            logger.debug(f"Sending POST request to {url}")
+            logger.debug(f"Request Headers: {headers}")
+            logger.debug(f"Request Body: {request_body}")
+            
             response = requests.post(url, headers=headers, json=request_body, timeout=timeout)
-            logger.debug(f"Response status code: {response.status_code}")
-            logger.debug(f"Response content: {response.text}")
+            
+            logger.debug(f"Response Status Code: {response.status_code}")
+            logger.debug(f"Response Content: {response.text}")
+            
+            response.raise_for_status()
+            return response.json()
         else:
+            logger.error(f"Unsupported HTTP method: {method}")
             raise ValueError("Only POST method is supported for SMS.")
-        
-        response.raise_for_status()
-        return response.json()
+    
     except requests.exceptions.RequestException as e:
-        logger.error(f"HTTP SMS error: {e}")
-        logger.error(f"Full error details: {traceback.format_exc()}")
-        logger.error(f"Request details: URL={url}, Method={method}, Headers={headers}, Body={request_body}")
+        logger.error(f"HTTP Request Error: {e}")
+        logger.error(f"Request Details: URL={url}, Method={method}")
+        logger.error(traceback.format_exc())
         return None
     except Exception as e:
-        logger.error(f"Unexpected error in send_http_request: {e}")
+        logger.error(f"Unexpected HTTP Request Error: {e}")
         logger.error(traceback.format_exc())
         return None
 
 def send_sms(message, number):
-    logger.info(f"Attempting to send SMS to {number}")
+    logger.info(f"Initiating SMS send to number: {number}")
     
-    # Validate input parameters
-    if not sms_uri:
-        logger.error("SMS URI is not configured")
-        return
-    
-    if not sms_credentials:
-        logger.error("SMS credentials are not configured")
-        return
-    
+    # Validate configuration
+    if not all([sms_uri, sms_credentials, number]):
+        logger.error("SMS sending failed: Missing configuration")
+        logger.error(f"SMS URI: {bool(sms_uri)}, Credentials: {bool(sms_credentials)}, Number: {bool(number)}")
+        return False
+
     body = {
         "to": number,
         "content": message
@@ -118,20 +127,30 @@ def send_sms(message, number):
         result = send_http_request(sms_credentials, sms_uri, 'POST', body, 100)
         
         if result:
-            logger.info(f"HTTP SMS sent successfully to {number}")
-            logger.debug(f"SMS Send Result: {result}")
+            logger.info(f"SMS successfully sent to {number}")
+            return True
         else:
-            logger.warning(f"Failed to send HTTP SMS to {number}")
+            logger.warning(f"SMS sending failed for number {number}")
+            return False
+    
     except Exception as e:
-        logger.error(f"Exception in send_sms for number {number}: {e}")
+        logger.error(f"Exception in SMS sending to {number}: {e}")
         logger.error(traceback.format_exc())
+        return False
+
+def drop_row(sensorid):
+    if sensorid in alarms:
+        del alarms[sensorid]
+        logger.info(f"Alarm entry for sensor {sensorid} has been dropped")
 
 def assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time):
     global last_alarm_sent_time
 
     current_time = time.time()
+    logger.debug(f"Checking alarm cooldown: Current time {current_time}, Last alarm time {last_alarm_sent_time}")
+    
     if current_time - last_alarm_sent_time < alarm_send_delay:
-        logger.info(f"Delaying alarm send due to cooldown. Current time: {current_time}, Last alarm time: {last_alarm_sent_time}")
+        logger.info(f"Alarm send delayed due to cooldown period for sensor {sensorid}")
         return
 
     last_alarm_sent_time = current_time
@@ -153,50 +172,94 @@ def assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time):
             f'Time: {alarm_time} \\n'
         )
         
-        logger.info(f"Preparing to send alarm message: {alarm_message}")
+        logger.info(f"Generated Alarm Message: {alarm_message}")
         
         if not phone_numbers:
-            logger.error("No phone numbers configured to send SMS")
+            logger.error("No phone numbers configured for SMS alerts")
             return
 
+        successful_sends = 0
         for num in phone_numbers:
-            logger.info(f"Attempting to send SMS to {num}")
-            send_sms(alarm_message, num)
+            if send_sms(alarm_message, num):
+                successful_sends += 1
         
+        logger.info(f"SMS Alerts: {successful_sends} out of {len(phone_numbers)} sent successfully")
+        
+        # Sensor-specific handling with logging
         if sensorid in list_of_cold_room_sensors:
+            logger.debug(f"Scheduling drop for cold room sensor {sensorid}")
             threading.Timer(5 * 60, drop_row, args=(sensorid,)).start()
         elif sensorid in list_of_normal_room_sensors:
+            logger.debug(f"Scheduling drop for normal room sensor {sensorid}")
             threading.Timer(5 * 60, drop_row, args=(sensorid,)).start()
+
 def convertdata(s):
     try:
+        logger.debug(f"Converting incoming data: {s}")
         s = s.replace("\n", "").replace("b'", "").replace("\n\n'", "")
         outlist = s.split("}")
+        
+        # Detailed parsing with logging
         TypeOfAlarm = outlist[0].split(',')[0].split(":")[1].replace("\"", "")
         sensorid = outlist[4].split(',')[-1].split(":")[1].replace("\"", "")
         Gatewayid = outlist[4].split(',')[-2].split(":")[2].replace("\"", "")
         value = outlist[5].split(',')[4].replace("]]", "")
         alarm_time = outlist[5].split(',')[3].replace("]]", "").replace("[[", "").split("\"")[3]
+        
+        logger.info(f"Parsed Alarm Data: "
+                     f"Type={TypeOfAlarm}, "
+                     f"SensorID={sensorid}, "
+                     f"GatewayID={Gatewayid}, "
+                     f"Value={value}, "
+                     f"Time={alarm_time}")
+        
         assign_to_memory(TypeOfAlarm, sensorid, Gatewayid, value, alarm_time)
     except Exception as e:
-        logger.error(f"Error converting data: {e}")
+        logger.error(f"Data Conversion Error: {e}")
+        logger.error(f"Problematic Input: {s}")
+        logger.error(traceback.format_exc())
 
 class EchoHandler(asyncore.dispatcher_with_send):
     def handle_read(self):
-        data = self.recv(8192)
-        if data:
-            convertdata(str(data))
+        try:
+            data = self.recv(8192)
+            if data:
+                logger.debug(f"Received data in EchoHandler: {data}")
+                convertdata(str(data))
+        except Exception as e:
+            logger.error(f"EchoHandler Read Error: {e}")
+            logger.error(traceback.format_exc())
 
 class EchoServer(asyncore.dispatcher):
     def __init__(self, host, port):
         asyncore.dispatcher.__init__(self)
-        self.create_socket()
-        self.set_reuse_addr()
-        self.bind((host, port))
-        self.listen(5)
+        try:
+            self.create_socket()
+            self.set_reuse_addr()
+            self.bind((host, port))
+            self.listen(5)
+            logger.info(f"Server initialized on host={host}, port={port}")
+        except Exception as e:
+            logger.critical(f"Server Initialization Error: {e}")
+            logger.critical(traceback.format_exc())
 
     def handle_accepted(self, sock, addr):
         logger.info(f"Incoming connection from {addr}")
-        handler = EchoHandler(sock)
+        try:
+            handler = EchoHandler(sock)
+        except Exception as e:
+            logger.error(f"Error handling connection from {addr}: {e}")
+            logger.error(traceback.format_exc())
 
-server = EchoServer('', 5060)
-asyncore.loop()
+def main():
+    try:
+        logger.info("Starting MQTT and SMS Monitoring Service")
+        server = EchoServer('', 5060)
+        logger.info("Server created successfully")
+        asyncore.loop()
+    except Exception as e:
+        logger.critical(f"Critical Error in Main Execution: {e}")
+        logger.critical(traceback.format_exc())
+
+if __name__ == "__main__":
+    main()
