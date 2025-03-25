@@ -5,7 +5,6 @@
   "description": "Handles alarms and sends SMS via MQTT and HTTP",
   "startup": "application",
   "boot": "auto",
-  "host_network": true,
   "options": {
     "mqtt_broker": "192.168.1.101",
     "mqtt_user": "mqtt-user",
@@ -27,8 +26,5 @@
     "cold_room_sensors": "str",
     "normal_room_sensors": "str",
     "phone_numbers": "str"
-  },
-  "ports": {
-    "5060/tcp": 5060
   }
 }
